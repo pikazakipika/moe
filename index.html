@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資産推移予測ツール</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>資産推移予測ツール</h1>
+
+    <form id="inputForm">
+      <!-- 収入セクション -->
+      <section class="input-section">
+        <h2>収入（税引前・年額）</h2>
+        <div class="input-group">
+          <label for="husbandIncome">夫の年収</label>
+          <input type="number" id="husbandIncome" name="husbandIncome" placeholder="5000000" step="10000">
+          <span class="unit">円</span>
+        </div>
+        <div class="input-group">
+          <label for="wifeIncome">妻の年収</label>
+          <input type="number" id="wifeIncome" name="wifeIncome" placeholder="3000000" step="10000">
+          <span class="unit">円</span>
+        </div>
+      </section>
+
+      <!-- 月額固定支出セクション -->
+      <section class="input-section">
+        <h2>月額固定支出</h2>
+        <div class="input-group">
+          <label for="houseLoan">家のローン</label>
+          <input type="number" id="houseLoan" name="houseLoan" placeholder="100000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="carLoan">車のローン</label>
+          <input type="number" id="carLoan" name="carLoan" placeholder="30000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="utilities">公共料金（電気・ガス・水道）</label>
+          <input type="number" id="utilities" name="utilities" placeholder="25000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="phone">携帯代</label>
+          <input type="number" id="phone" name="phone" placeholder="15000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="wifi">WiFi代</label>
+          <input type="number" id="wifi" name="wifi" placeholder="5000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="husbandAllowance">夫の小遣い</label>
+          <input type="number" id="husbandAllowance" name="husbandAllowance" placeholder="30000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="wifeAllowance">妻の小遣い</label>
+          <input type="number" id="wifeAllowance" name="wifeAllowance" placeholder="30000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="food">家族の食費</label>
+          <input type="number" id="food" name="food" placeholder="60000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="medical">医療費</label>
+          <input type="number" id="medical" name="medical" placeholder="10000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="insurance">保険料</label>
+          <input type="number" id="insurance" name="insurance" placeholder="20000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="contact">コンタクト代</label>
+          <input type="number" id="contact" name="contact" placeholder="5000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+      </section>
+
+      <!-- 年額支出セクション -->
+      <section class="input-section">
+        <h2>年額支出</h2>
+        <div class="input-group">
+          <label for="event">イベント費</label>
+          <input type="number" id="event" name="event" placeholder="100000" step="10000">
+          <span class="unit">円/年</span>
+        </div>
+        <div class="input-group">
+          <label for="ceremony">冠婚葬祭費</label>
+          <input type="number" id="ceremony" name="ceremony" placeholder="100000" step="10000">
+          <span class="unit">円/年</span>
+        </div>
+        <div class="input-group">
+          <label for="travel">旅費</label>
+          <input type="number" id="travel" name="travel" placeholder="200000" step="10000">
+          <span class="unit">円/年</span>
+        </div>
+        <div class="input-group">
+          <label for="celebration">お祝い費</label>
+          <input type="number" id="celebration" name="celebration" placeholder="50000" step="10000">
+          <span class="unit">円/年</span>
+        </div>
+      </section>
+
+      <button type="submit" class="calculate-btn">計算する</button>
+    </form>
+
+    <!-- 結果表示エリア -->
+    <section id="result" class="result-section" style="display: none;">
+      <h2>年間収支</h2>
+      <div class="result-summary">
+        <div class="result-item">
+          <span class="result-label">年間収入（税引後）</span>
+          <span id="totalIncome" class="result-value">0</span>
+          <span class="unit">円</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">年間支出</span>
+          <span id="totalExpense" class="result-value">0</span>
+          <span class="unit">円</span>
+        </div>
+        <div class="result-item result-balance">
+          <span class="result-label">年間収支</span>
+          <span id="balance" class="result-value">0</span>
+          <span class="unit">円</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
