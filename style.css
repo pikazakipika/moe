@@ -244,3 +244,9 @@ input[type="number"] {
 #projectionTable .negative-row:hover {
   background: #fcd5d5;
 }
+
+#projectionTable .events {
+  text-align: left;
+  font-size: 0.75rem;
+  color: #3498db;
+}

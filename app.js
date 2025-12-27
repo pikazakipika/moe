@@ -12,6 +12,9 @@
   var TAX_RATE = 0.20; // 税金・社会保険料率（簡易計算）
   var TARGET_AGE = 100; // シミュレーション終了年齢
   var STORAGE_KEY = 'assetProjectionData'; // localStorage用キー
+  var PENSION_START_AGE = 65; // 年金受給開始年齢
+  var PENSION_HUSBAND_MONTHLY = 170000; // 夫の年金月額（概算）
+  var PENSION_WIFE_MONTHLY = 130000; // 妻の年金月額（概算）
 
   // ============================================
   // 収入計算（単年）
@@ -30,13 +33,28 @@
       wifeGross = 0;
     }
 
+    // 年金収入（65歳以降）
+    var husbandPension = 0;
+    var wifePension = 0;
+    if (husbandAge >= PENSION_START_AGE) {
+      husbandPension = PENSION_HUSBAND_MONTHLY * 12;
+    }
+    if (wifeAge >= PENSION_START_AGE) {
+      wifePension = PENSION_WIFE_MONTHLY * 12;
+    }
+
     var totalGross = husbandGross + wifeGross;
-    var totalNet = Math.floor(totalGross * (1 - TAX_RATE));
+    var totalPension = husbandPension + wifePension;
+    // 給与は税引き、年金は概算なのでそのまま
+    var totalNet = Math.floor(totalGross * (1 - TAX_RATE)) + totalPension;
 
     return {
       husbandGross: husbandGross,
       wifeGross: wifeGross,
+      husbandPension: husbandPension,
+      wifePension: wifePension,
       totalGross: totalGross,
+      totalPension: totalPension,
       totalNet: totalNet
     };
   }
@@ -112,6 +130,15 @@
 
       assets += balance;
 
+      // イベント（備考）を生成
+      var events = [];
+      if (husbandAge === PENSION_START_AGE) {
+        events.push('夫 年金開始');
+      }
+      if (wifeAge === PENSION_START_AGE) {
+        events.push('妻 年金開始');
+      }
+
       results.push({
         year: year,
         husbandAge: husbandAge,
@@ -120,6 +147,7 @@
         expense: expense.annualTotal,
         balance: balance,
         assets: assets,
+        events: events,
         predicted: {
           income: income,
           expense: expense
@@ -227,6 +255,8 @@
         tr.classList.add('negative-row');
       }
 
+      var eventsText = row.events ? row.events.join(', ') : '';
+
       tr.innerHTML =
         '<td>' + row.year + '</td>' +
         '<td>' + row.husbandAge + '</td>' +
@@ -235,7 +265,8 @@
         '<td class="' + (row.balance >= 0 ? 'positive' : 'negative') + '">' +
           (row.balance >= 0 ? '+' : '') + formatMoney(row.balance) + '</td>' +
         '<td class="' + (row.assets >= 0 ? '' : 'negative') + '">' +
-          formatMoney(row.assets) + '</td>';
+          formatMoney(row.assets) + '</td>' +
+        '<td class="events">' + eventsText + '</td>';
 
       tbody.appendChild(tr);
     });
