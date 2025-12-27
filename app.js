@@ -249,6 +249,8 @@
 
     results.forEach(function(row) {
       var tr = document.createElement('tr');
+      var income = row.predicted.income;
+      var expense = row.predicted.expense;
 
       // 資産がマイナスならハイライト
       if (row.assets < 0) {
@@ -257,11 +259,21 @@
 
       var eventsText = row.events ? row.events.join(', ') : '';
 
+      // 収入詳細（税引後）
+      var husbandSalaryNet = Math.floor(income.husbandGross * (1 - TAX_RATE));
+      var wifeSalaryNet = Math.floor(income.wifeGross * (1 - TAX_RATE));
+
       tr.innerHTML =
         '<td>' + row.year + '</td>' +
         '<td>' + row.husbandAge + '</td>' +
         '<td>' + formatMoney(row.income) + '</td>' +
+        '<td class="detail-col income-detail">' + formatMoney(husbandSalaryNet) + '</td>' +
+        '<td class="detail-col income-detail">' + formatMoney(wifeSalaryNet) + '</td>' +
+        '<td class="detail-col income-detail">' + formatMoney(income.husbandPension) + '</td>' +
+        '<td class="detail-col income-detail">' + formatMoney(income.wifePension) + '</td>' +
         '<td>' + formatMoney(row.expense) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.monthlyTotal * 12) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.yearlyTotal) + '</td>' +
         '<td class="' + (row.balance >= 0 ? 'positive' : 'negative') + '">' +
           (row.balance >= 0 ? '+' : '') + formatMoney(row.balance) + '</td>' +
         '<td class="' + (row.assets >= 0 ? '' : 'negative') + '">' +
@@ -270,6 +282,45 @@
 
       tbody.appendChild(tr);
     });
+  }
+
+  // ============================================
+  // カラム展開機能
+  // ============================================
+  function toggleColumns(type) {
+    var detailClass = type + '-detail';
+    var headerEl = document.getElementById(type + 'Header');
+    var iconEl = headerEl.querySelector('.expand-icon');
+    var cols = document.querySelectorAll('.' + detailClass);
+
+    var isExpanded = cols[0].classList.contains('show');
+
+    cols.forEach(function(col) {
+      if (isExpanded) {
+        col.classList.remove('show');
+      } else {
+        col.classList.add('show');
+      }
+    });
+
+    iconEl.textContent = isExpanded ? '▶' : '▼';
+  }
+
+  function setupColumnToggle() {
+    var incomeHeader = document.getElementById('incomeHeader');
+    var expenseHeader = document.getElementById('expenseHeader');
+
+    if (incomeHeader) {
+      incomeHeader.addEventListener('click', function() {
+        toggleColumns('income');
+      });
+    }
+
+    if (expenseHeader) {
+      expenseHeader.addEventListener('click', function() {
+        toggleColumns('expense');
+      });
+    }
   }
 
   // ============================================
@@ -293,6 +344,9 @@
   // ============================================
   // ページ読み込み時に保存データを復元
   restoreFormData();
+
+  // カラム展開機能を設定
+  setupColumnToggle();
 
   document.getElementById('inputForm').addEventListener('submit', function(e) {
     e.preventDefault();

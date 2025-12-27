@@ -250,3 +250,40 @@ input[type="number"] {
   font-size: 0.75rem;
   color: #3498db;
 }
+
+/* 展開可能なヘッダー */
+#projectionTable .expandable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#projectionTable .expandable:active {
+  background: #e8f4fc;
+}
+
+#projectionTable .expand-icon {
+  font-size: 0.7rem;
+  margin-left: 2px;
+}
+
+/* 詳細カラム（初期非表示） */
+#projectionTable .detail-col {
+  display: none;
+}
+
+#projectionTable .detail-col.show {
+  display: table-cell;
+}
+
+/* 収入詳細カラムの背景色 */
+#projectionTable th.income-detail,
+#projectionTable td.income-detail {
+  background: #e8f8e8;
+}
+
+/* 支出詳細カラムの背景色 */
+#projectionTable th.expense-detail,
+#projectionTable td.expense-detail {
+  background: #fef3e8;
+}
