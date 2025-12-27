@@ -10,35 +10,40 @@
   // 定数
   // ============================================
   var TAX_RATE = 0.20; // 税金・社会保険料率（簡易計算）
+  var TARGET_AGE = 100; // シミュレーション終了年齢
 
   // ============================================
-  // 収入計算
+  // 収入計算（単年）
   // ============================================
-  function calculateAnnualIncome(input) {
+  function calculateYearlyIncome(input, husbandAge, wifeAge) {
     var husbandGross = input.husbandIncome || 0;
     var wifeGross = input.wifeIncome || 0;
+    var husbandRetireAge = input.husbandRetireAge || 65;
+    var wifeRetireAge = input.wifeRetireAge || 60;
 
-    var husbandNet = Math.floor(husbandGross * (1 - TAX_RATE));
-    var wifeNet = Math.floor(wifeGross * (1 - TAX_RATE));
+    // 退職後は給与0
+    if (husbandAge >= husbandRetireAge) {
+      husbandGross = 0;
+    }
+    if (wifeAge >= wifeRetireAge) {
+      wifeGross = 0;
+    }
+
+    var totalGross = husbandGross + wifeGross;
+    var totalNet = Math.floor(totalGross * (1 - TAX_RATE));
 
     return {
-      husband: {
-        gross: husbandGross,
-        net: husbandNet
-      },
-      wife: {
-        gross: wifeGross,
-        net: wifeNet
-      },
-      totalGross: husbandGross + wifeGross,
-      totalNet: husbandNet + wifeNet
+      husbandGross: husbandGross,
+      wifeGross: wifeGross,
+      totalGross: totalGross,
+      totalNet: totalNet
     };
   }
 
   // ============================================
-  // 支出計算
+  // 支出計算（単年）
   // ============================================
-  function calculateAnnualExpense(input) {
+  function calculateYearlyExpense(input) {
     // 月額固定支出
     var monthlyExpenses = {
       houseLoan: input.houseLoan || 0,
@@ -74,12 +79,55 @@
     }
 
     return {
-      monthly: monthlyExpenses,
       monthlyTotal: monthlyTotal,
-      yearly: yearlyExpenses,
       yearlyTotal: yearlyTotal,
       annualTotal: annualFromMonthly + yearlyTotal
     };
+  }
+
+  // ============================================
+  // 100歳までのシミュレーション
+  // ============================================
+  function runSimulation(input) {
+    var currentYear = new Date().getFullYear();
+    var husbandBirthYear = input.husbandBirthYear || 1990;
+    var wifeBirthYear = input.wifeBirthYear || 1992;
+    var currentAssets = input.currentAssets || 0;
+
+    var husbandCurrentAge = currentYear - husbandBirthYear;
+    var results = [];
+    var assets = currentAssets;
+
+    // 夫が100歳になるまでシミュレーション
+    for (var year = currentYear; ; year++) {
+      var husbandAge = year - husbandBirthYear;
+      var wifeAge = year - wifeBirthYear;
+
+      if (husbandAge > TARGET_AGE) break;
+
+      var income = calculateYearlyIncome(input, husbandAge, wifeAge);
+      var expense = calculateYearlyExpense(input);
+      var balance = income.totalNet - expense.annualTotal;
+
+      assets += balance;
+
+      results.push({
+        year: year,
+        husbandAge: husbandAge,
+        wifeAge: wifeAge,
+        income: income.totalNet,
+        expense: expense.annualTotal,
+        balance: balance,
+        assets: assets,
+        predicted: {
+          income: income,
+          expense: expense
+        },
+        actual: null // 将来の実績データ用
+      });
+    }
+
+    return results;
   }
 
   // ============================================
@@ -101,29 +149,61 @@
     return num.toLocaleString('ja-JP');
   }
 
+  function formatMoney(num) {
+    // 万円単位で表示
+    var man = Math.floor(num / 10000);
+    return formatNumber(man) + '万';
+  }
+
   // ============================================
   // 結果表示
   // ============================================
-  function displayResult(income, expense) {
+  function displayResult(results) {
     var resultSection = document.getElementById('result');
     var totalIncomeEl = document.getElementById('totalIncome');
     var totalExpenseEl = document.getElementById('totalExpense');
     var balanceEl = document.getElementById('balance');
 
-    var balance = income.totalNet - expense.annualTotal;
+    // 初年度のサマリーを表示
+    var firstYear = results[0];
+    totalIncomeEl.textContent = formatNumber(firstYear.income);
+    totalExpenseEl.textContent = formatNumber(firstYear.expense);
+    balanceEl.textContent = (firstYear.balance >= 0 ? '+' : '') + formatNumber(firstYear.balance);
 
-    totalIncomeEl.textContent = formatNumber(income.totalNet);
-    totalExpenseEl.textContent = formatNumber(expense.annualTotal);
-    balanceEl.textContent = (balance >= 0 ? '+' : '') + formatNumber(balance);
-
-    // 収支に応じてスタイルを変更
     balanceEl.classList.remove('positive', 'negative');
-    balanceEl.classList.add(balance >= 0 ? 'positive' : 'negative');
+    balanceEl.classList.add(firstYear.balance >= 0 ? 'positive' : 'negative');
+
+    // 資産推移表を生成
+    displayProjectionTable(results);
 
     resultSection.style.display = 'block';
-
-    // 結果までスクロール
     resultSection.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function displayProjectionTable(results) {
+    var tbody = document.getElementById('projectionBody');
+    tbody.innerHTML = '';
+
+    results.forEach(function(row) {
+      var tr = document.createElement('tr');
+
+      // 資産がマイナスならハイライト
+      if (row.assets < 0) {
+        tr.classList.add('negative-row');
+      }
+
+      tr.innerHTML =
+        '<td>' + row.year + '</td>' +
+        '<td>' + row.husbandAge + '</td>' +
+        '<td>' + formatMoney(row.income) + '</td>' +
+        '<td>' + formatMoney(row.expense) + '</td>' +
+        '<td class="' + (row.balance >= 0 ? 'positive' : 'negative') + '">' +
+          (row.balance >= 0 ? '+' : '') + formatMoney(row.balance) + '</td>' +
+        '<td class="' + (row.assets >= 0 ? '' : 'negative') + '">' +
+          formatMoney(row.assets) + '</td>';
+
+      tbody.appendChild(tr);
+    });
   }
 
   // ============================================
@@ -131,23 +211,11 @@
   // ============================================
   function calculate() {
     var input = getFormData();
-    var income = calculateAnnualIncome(input);
-    var expense = calculateAnnualExpense(input);
+    var results = runSimulation(input);
 
-    displayResult(income, expense);
+    displayResult(results);
 
-    // 将来の拡張用: 計算結果をJSON形式で保持
-    var result = {
-      year: new Date().getFullYear(),
-      predicted: {
-        income: income,
-        expense: expense,
-        balance: income.totalNet - expense.annualTotal
-      },
-      actual: null // 将来の実績データ用
-    };
-
-    console.log('Simulation result:', result);
+    console.log('Simulation results:', results);
   }
 
   // ============================================

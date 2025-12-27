@@ -180,3 +180,67 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* 資産推移表 */
+.table-title {
+  margin-top: 24px;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+#projectionTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 500px;
+}
+
+#projectionTable th,
+#projectionTable td {
+  padding: 10px 8px;
+  text-align: right;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+
+#projectionTable th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #34495e;
+  position: sticky;
+  top: 0;
+}
+
+#projectionTable th:first-child,
+#projectionTable td:first-child {
+  text-align: center;
+}
+
+#projectionTable th:nth-child(2),
+#projectionTable td:nth-child(2) {
+  text-align: center;
+}
+
+#projectionTable tbody tr:hover {
+  background: #f8f9fa;
+}
+
+#projectionTable .positive {
+  color: #27ae60;
+}
+
+#projectionTable .negative {
+  color: #e74c3c;
+}
+
+#projectionTable .negative-row {
+  background: #fde8e8;
+}
+
+#projectionTable .negative-row:hover {
+  background: #fcd5d5;
+}

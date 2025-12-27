@@ -11,6 +11,36 @@
     <h1>資産推移予測ツール</h1>
 
     <form id="inputForm">
+      <!-- 基本情報セクション -->
+      <section class="input-section">
+        <h2>基本情報</h2>
+        <div class="input-group">
+          <label for="husbandBirthYear">夫の生年</label>
+          <input type="number" id="husbandBirthYear" name="husbandBirthYear" placeholder="1990" min="1950" max="2010">
+          <span class="unit">年</span>
+        </div>
+        <div class="input-group">
+          <label for="wifeBirthYear">妻の生年</label>
+          <input type="number" id="wifeBirthYear" name="wifeBirthYear" placeholder="1992" min="1950" max="2010">
+          <span class="unit">年</span>
+        </div>
+        <div class="input-group">
+          <label for="currentAssets">現在の資産額</label>
+          <input type="number" id="currentAssets" name="currentAssets" placeholder="5000000" step="100000">
+          <span class="unit">円</span>
+        </div>
+        <div class="input-group">
+          <label for="husbandRetireAge">夫の退職年齢</label>
+          <input type="number" id="husbandRetireAge" name="husbandRetireAge" placeholder="65" min="50" max="75">
+          <span class="unit">歳</span>
+        </div>
+        <div class="input-group">
+          <label for="wifeRetireAge">妻の退職年齢</label>
+          <input type="number" id="wifeRetireAge" name="wifeRetireAge" placeholder="60" min="50" max="75">
+          <span class="unit">歳</span>
+        </div>
+      </section>
+
       <!-- 収入セクション -->
       <section class="input-section">
         <h2>収入（税引前・年額）</h2>
@@ -116,7 +146,7 @@
 
     <!-- 結果表示エリア -->
     <section id="result" class="result-section" style="display: none;">
-      <h2>年間収支</h2>
+      <h2>年間収支サマリー</h2>
       <div class="result-summary">
         <div class="result-item">
           <span class="result-label">年間収入（税引後）</span>
@@ -133,6 +163,25 @@
           <span id="balance" class="result-value">0</span>
           <span class="unit">円</span>
         </div>
+      </div>
+
+      <!-- 資産推移表 -->
+      <h2 class="table-title">100歳までの資産推移</h2>
+      <div class="table-container">
+        <table id="projectionTable">
+          <thead>
+            <tr>
+              <th>年</th>
+              <th>年齢</th>
+              <th>収入</th>
+              <th>支出</th>
+              <th>収支</th>
+              <th>資産残高</th>
+            </tr>
+          </thead>
+          <tbody id="projectionBody">
+          </tbody>
+        </table>
       </div>
     </section>
   </div>
