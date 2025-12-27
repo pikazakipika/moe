@@ -11,6 +11,7 @@
   // ============================================
   var TAX_RATE = 0.20; // 税金・社会保険料率（簡易計算）
   var TARGET_AGE = 100; // シミュレーション終了年齢
+  var STORAGE_KEY = 'assetProjectionData'; // localStorage用キー
 
   // ============================================
   // 収入計算（単年）
@@ -156,6 +157,40 @@
   }
 
   // ============================================
+  // localStorage保存・読み込み
+  // ============================================
+  function saveToStorage(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+  }
+
+  function loadFromStorage() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.warn('Failed to load from localStorage:', e);
+      return null;
+    }
+  }
+
+  function restoreFormData() {
+    var data = loadFromStorage();
+    if (!data) return;
+
+    var form = document.getElementById('inputForm');
+    for (var key in data) {
+      var input = form.elements[key];
+      if (input && data[key]) {
+        input.value = data[key];
+      }
+    }
+  }
+
+  // ============================================
   // 結果表示
   // ============================================
   function displayResult(results) {
@@ -211,6 +246,10 @@
   // ============================================
   function calculate() {
     var input = getFormData();
+
+    // 入力値を保存
+    saveToStorage(input);
+
     var results = runSimulation(input);
 
     displayResult(results);
@@ -219,8 +258,11 @@
   }
 
   // ============================================
-  // イベントリスナー
+  // イベントリスナー・初期化
   // ============================================
+  // ページ読み込み時に保存データを復元
+  restoreFormData();
+
   document.getElementById('inputForm').addEventListener('submit', function(e) {
     e.preventDefault();
     calculate();
