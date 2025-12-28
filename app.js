@@ -477,6 +477,17 @@
     var tbody = document.getElementById('projectionBody');
     tbody.innerHTML = '';
 
+    // 展開状態をリセット（ヘッダーのアイコンも戻す）
+    var incomeHeader = document.getElementById('incomeHeader');
+    var expenseHeader = document.getElementById('expenseHeader');
+    var incomeCols = document.querySelectorAll('.income-detail');
+    var expenseCols = document.querySelectorAll('.expense-detail');
+
+    incomeCols.forEach(function(col) { col.classList.remove('show'); });
+    expenseCols.forEach(function(col) { col.classList.remove('show'); });
+    if (incomeHeader) incomeHeader.querySelector('.expand-icon').textContent = '▶';
+    if (expenseHeader) expenseHeader.querySelector('.expand-icon').textContent = '▶';
+
     results.forEach(function(row) {
       var tr = document.createElement('tr');
       var income = row.predicted.income;
