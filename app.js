@@ -106,7 +106,50 @@
   }
 
   // ============================================
-  // 保育料・学費計算（年額）
+  // 子供1人あたりの費用計算（食費+保育/学費）
+  // ============================================
+  function calculateChildCost(child, childIndex) {
+    if (child.age < 0) return 0;
+
+    var cost = 0;
+
+    // 食費増加
+    if (child.age < 6) {
+      cost += CHILD_FOOD_COST.UNDER_6 * 12;
+    } else if (child.age < 13) {
+      cost += CHILD_FOOD_COST.UNDER_13 * 12;
+    } else if (child.age < 23) {
+      cost += CHILD_FOOD_COST.UNDER_23 * 12;
+    }
+
+    // 保育料・学費
+    if (child.age <= 2) {
+      // 0〜2歳: 保育料（第1子のみ有料）
+      if (childIndex === 0) {
+        cost += NURSERY_FEE_MONTHLY * 12;
+      }
+    } else if (child.age <= 5) {
+      // 3〜5歳: 幼稚園/保育園（無償化で実費のみ）
+      cost += EDUCATION_COST.NURSERY;
+    } else if (child.age <= 11) {
+      // 6〜11歳: 小学校
+      cost += EDUCATION_COST.ELEMENTARY;
+    } else if (child.age <= 14) {
+      // 12〜14歳: 中学校
+      cost += EDUCATION_COST.JUNIOR_HIGH;
+    } else if (child.age <= 17) {
+      // 15〜17歳: 高校
+      cost += EDUCATION_COST.HIGH_SCHOOL;
+    } else if (child.age <= 21) {
+      // 18〜21歳: 大学
+      cost += EDUCATION_COST.UNIVERSITY;
+    }
+
+    return cost;
+  }
+
+  // ============================================
+  // 保育料・学費計算（年額・合計）
   // ============================================
   function calculateEducationCost(children) {
     var total = 0;
@@ -248,22 +291,26 @@
       yearlyTotal += yearlyExpenses[key];
     }
 
-    // 子供関連費用
-    var childFoodCost = calculateChildFoodCost(children);
-    var educationCost = calculateEducationCost(children);
+    // 子供関連費用（子供ごと）
+    var child1Cost = children[0] ? calculateChildCost(children[0], 0) : 0;
+    var child2Cost = children[1] ? calculateChildCost(children[1], 1) : 0;
+    var child3Cost = children[2] ? calculateChildCost(children[2], 2) : 0;
+    var totalChildCost = child1Cost + child2Cost + child3Cost;
 
     return {
       monthlyTotal: monthlyTotal,
       yearlyTotal: yearlyTotal,
-      annualTotal: annualFromMonthly + yearlyTotal + childFoodCost + educationCost,
+      annualTotal: annualFromMonthly + yearlyTotal + totalChildCost,
       // カテゴリ別（月額）
       loan: loan,
       food: food,
       allowance: allowance,
       other: other,
-      // 子供関連（年額）
-      childFoodCost: childFoodCost,
-      educationCost: educationCost
+      // 子供ごとの費用（年額）
+      child1Cost: child1Cost,
+      child2Cost: child2Cost,
+      child3Cost: child3Cost,
+      totalChildCost: totalChildCost
     };
   }
 
@@ -460,9 +507,11 @@
         '<td class="detail-col income-detail">' + formatMoney(childIncome) + '</td>' +
         '<td>' + formatMoney(row.expense) + '</td>' +
         '<td class="detail-col expense-detail">' + formatMoney(expense.loan * 12) + '</td>' +
-        '<td class="detail-col expense-detail">' + formatMoney((expense.food * 12) + (expense.childFoodCost || 0)) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.food * 12) + '</td>' +
         '<td class="detail-col expense-detail">' + formatMoney(expense.allowance * 12) + '</td>' +
-        '<td class="detail-col expense-detail">' + formatMoney(expense.educationCost || 0) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.child1Cost || 0) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.child2Cost || 0) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.child3Cost || 0) + '</td>' +
         '<td class="detail-col expense-detail">' + formatMoney(expense.other * 12 + expense.yearlyTotal) + '</td>' +
         '<td class="' + (row.balance >= 0 ? 'positive' : 'negative') + '">' +
           (row.balance >= 0 ? '+' : '') + formatMoney(row.balance) + '</td>' +
