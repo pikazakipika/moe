@@ -56,6 +56,27 @@
         </div>
       </section>
 
+      <!-- 子供情報セクション -->
+      <section class="input-section">
+        <h2>子供情報（最大3人）</h2>
+        <p class="section-note">生年を入力すると児童手当・保育料・学費・食費増加が自動計算されます</p>
+        <div class="input-group">
+          <label for="child1BirthYear">第1子の生年</label>
+          <input type="number" id="child1BirthYear" name="child1BirthYear" placeholder="2025" min="2000" max="2050">
+          <span class="unit">年</span>
+        </div>
+        <div class="input-group">
+          <label for="child2BirthYear">第2子の生年</label>
+          <input type="number" id="child2BirthYear" name="child2BirthYear" placeholder="" min="2000" max="2050">
+          <span class="unit">年</span>
+        </div>
+        <div class="input-group">
+          <label for="child3BirthYear">第3子の生年</label>
+          <input type="number" id="child3BirthYear" name="child3BirthYear" placeholder="" min="2000" max="2050">
+          <span class="unit">年</span>
+        </div>
+      </section>
+
       <!-- 月額固定支出セクション -->
       <section class="input-section">
         <h2>月額固定支出</h2>
@@ -178,10 +199,12 @@
               <th class="detail-col income-detail">妻給与</th>
               <th class="detail-col income-detail">夫年金</th>
               <th class="detail-col income-detail">妻年金</th>
+              <th class="detail-col income-detail">児童手当</th>
               <th class="expandable" id="expenseHeader">支出 <span class="expand-icon">▶</span></th>
               <th class="detail-col expense-detail">ローン</th>
               <th class="detail-col expense-detail">食費</th>
               <th class="detail-col expense-detail">小遣い</th>
+              <th class="detail-col expense-detail">保育/学費</th>
               <th class="detail-col expense-detail">その他</th>
               <th>収支</th>
               <th>資産残高</th>

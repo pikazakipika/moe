@@ -34,6 +34,12 @@ h2 {
   border-bottom: 2px solid #3498db;
 }
 
+.section-note {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
 .input-section {
   background: white;
   padding: 16px;

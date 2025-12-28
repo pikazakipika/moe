@@ -16,10 +16,157 @@
   var PENSION_HUSBAND_MONTHLY = 170000; // 夫の年金月額（概算）
   var PENSION_WIFE_MONTHLY = 130000; // 妻の年金月額（概算）
 
+  // 児童手当（月額）
+  var CHILD_ALLOWANCE_UNDER_3 = 15000;  // 0〜3歳未満
+  var CHILD_ALLOWANCE_NORMAL = 10000;   // 3歳〜高校生
+  var CHILD_ALLOWANCE_THIRD = 30000;    // 第3子以降
+  var CHILD_ALLOWANCE_END_AGE = 18;     // 高校卒業（18歳）まで
+
+  // 学費（年額）
+  var EDUCATION_COST = {
+    NURSERY: 50000,      // 保育園（3〜5歳、無償化後の実費）
+    ELEMENTARY: 100000,  // 小学校（公立）
+    JUNIOR_HIGH: 150000, // 中学校（公立）
+    HIGH_SCHOOL: 250000, // 高校（公立）
+    UNIVERSITY: 500000   // 大学（私立・奨学金前提で自己負担分）
+  };
+
+  // 保育料（0〜2歳、第1子のみ有料）- 年収に応じた概算
+  var NURSERY_FEE_MONTHLY = 40000; // 月額概算
+
+  // 食費増加（月額）
+  var CHILD_FOOD_COST = {
+    UNDER_6: 20000,   // 0〜5歳
+    UNDER_13: 30000,  // 6〜12歳
+    UNDER_23: 40000   // 13〜22歳
+  };
+
+  // 育休給付金
+  var MATERNITY_LEAVE_RATE_FIRST = 0.67;  // 180日まで67%
+  var MATERNITY_LEAVE_RATE_AFTER = 0.50;  // 以降50%
+
+  // ============================================
+  // 子供の年齢リストを取得
+  // ============================================
+  function getChildAges(input, year) {
+    var children = [];
+    if (input.child1BirthYear) {
+      children.push({ birthYear: input.child1BirthYear, age: year - input.child1BirthYear, order: 1 });
+    }
+    if (input.child2BirthYear) {
+      children.push({ birthYear: input.child2BirthYear, age: year - input.child2BirthYear, order: 2 });
+    }
+    if (input.child3BirthYear) {
+      children.push({ birthYear: input.child3BirthYear, age: year - input.child3BirthYear, order: 3 });
+    }
+    return children;
+  }
+
+  // ============================================
+  // 児童手当計算（年額）
+  // ============================================
+  function calculateChildAllowance(children) {
+    var total = 0;
+    children.forEach(function(child) {
+      if (child.age < 0 || child.age >= CHILD_ALLOWANCE_END_AGE) return;
+
+      var monthly;
+      if (child.order >= 3) {
+        // 第3子以降は一律3万円
+        monthly = CHILD_ALLOWANCE_THIRD;
+      } else if (child.age < 3) {
+        monthly = CHILD_ALLOWANCE_UNDER_3;
+      } else {
+        monthly = CHILD_ALLOWANCE_NORMAL;
+      }
+      total += monthly * 12;
+    });
+    return total;
+  }
+
+  // ============================================
+  // 子供の食費増加計算（年額）
+  // ============================================
+  function calculateChildFoodCost(children) {
+    var total = 0;
+    children.forEach(function(child) {
+      if (child.age < 0 || child.age >= 23) return;
+
+      var monthly;
+      if (child.age < 6) {
+        monthly = CHILD_FOOD_COST.UNDER_6;
+      } else if (child.age < 13) {
+        monthly = CHILD_FOOD_COST.UNDER_13;
+      } else {
+        monthly = CHILD_FOOD_COST.UNDER_23;
+      }
+      total += monthly * 12;
+    });
+    return total;
+  }
+
+  // ============================================
+  // 保育料・学費計算（年額）
+  // ============================================
+  function calculateEducationCost(children) {
+    var total = 0;
+    children.forEach(function(child, index) {
+      if (child.age < 0) return;
+
+      // 0〜2歳: 保育料（第1子のみ有料）
+      if (child.age <= 2) {
+        if (index === 0) {
+          total += NURSERY_FEE_MONTHLY * 12;
+        }
+        // 第2子以降は無料
+      }
+      // 3〜5歳: 幼稚園/保育園（無償化で実費のみ）
+      else if (child.age <= 5) {
+        total += EDUCATION_COST.NURSERY;
+      }
+      // 6〜11歳: 小学校
+      else if (child.age <= 11) {
+        total += EDUCATION_COST.ELEMENTARY;
+      }
+      // 12〜14歳: 中学校
+      else if (child.age <= 14) {
+        total += EDUCATION_COST.JUNIOR_HIGH;
+      }
+      // 15〜17歳: 高校
+      else if (child.age <= 17) {
+        total += EDUCATION_COST.HIGH_SCHOOL;
+      }
+      // 18〜21歳: 大学
+      else if (child.age <= 21) {
+        total += EDUCATION_COST.UNIVERSITY;
+      }
+    });
+    return total;
+  }
+
+  // ============================================
+  // 育休給付金計算（その年に出産があるか）
+  // ============================================
+  function calculateMaternityBenefit(input, year, wifeGross) {
+    var children = [input.child1BirthYear, input.child2BirthYear, input.child3BirthYear];
+    var isBirthYear = children.some(function(birthYear) {
+      return birthYear === year;
+    });
+
+    if (!isBirthYear) return { benefit: 0, replacesWifeSalary: false };
+
+    // 育休中は給与の代わりに給付金
+    // 180日まで67%、以降50% → 年平均で約58.5%
+    var averageRate = (MATERNITY_LEAVE_RATE_FIRST * 6 + MATERNITY_LEAVE_RATE_AFTER * 6) / 12;
+    var benefit = Math.floor(wifeGross * averageRate);
+
+    return { benefit: benefit, replacesWifeSalary: true };
+  }
+
   // ============================================
   // 収入計算（単年）
   // ============================================
-  function calculateYearlyIncome(input, husbandAge, wifeAge) {
+  function calculateYearlyIncome(input, husbandAge, wifeAge, year, children) {
     var husbandGross = input.husbandIncome || 0;
     var wifeGross = input.wifeIncome || 0;
     var husbandRetireAge = input.husbandRetireAge || 65;
@@ -33,6 +180,16 @@
       wifeGross = 0;
     }
 
+    // 育休給付金チェック（妻が退職前かつ出産年の場合）
+    var maternityBenefit = 0;
+    if (wifeAge < wifeRetireAge) {
+      var maternity = calculateMaternityBenefit(input, year, input.wifeIncome || 0);
+      if (maternity.replacesWifeSalary) {
+        maternityBenefit = maternity.benefit;
+        wifeGross = 0; // 育休中は給与なし
+      }
+    }
+
     // 年金収入（65歳以降）
     var husbandPension = 0;
     var wifePension = 0;
@@ -43,16 +200,21 @@
       wifePension = PENSION_WIFE_MONTHLY * 12;
     }
 
+    // 児童手当
+    var childAllowance = calculateChildAllowance(children);
+
     var totalGross = husbandGross + wifeGross;
     var totalPension = husbandPension + wifePension;
-    // 給与は税引き、年金は概算なのでそのまま
-    var totalNet = Math.floor(totalGross * (1 - TAX_RATE)) + totalPension;
+    // 給与は税引き、年金・児童手当・育休給付金はそのまま
+    var totalNet = Math.floor(totalGross * (1 - TAX_RATE)) + totalPension + childAllowance + maternityBenefit;
 
     return {
       husbandGross: husbandGross,
       wifeGross: wifeGross,
       husbandPension: husbandPension,
       wifePension: wifePension,
+      childAllowance: childAllowance,
+      maternityBenefit: maternityBenefit,
       totalGross: totalGross,
       totalPension: totalPension,
       totalNet: totalNet
@@ -62,7 +224,7 @@
   // ============================================
   // 支出計算（単年）
   // ============================================
-  function calculateYearlyExpense(input) {
+  function calculateYearlyExpense(input, children) {
     // 月額固定支出（カテゴリ別）
     var loan = (input.houseLoan || 0) + (input.carLoan || 0);
     var food = input.food || 0;
@@ -86,15 +248,22 @@
       yearlyTotal += yearlyExpenses[key];
     }
 
+    // 子供関連費用
+    var childFoodCost = calculateChildFoodCost(children);
+    var educationCost = calculateEducationCost(children);
+
     return {
       monthlyTotal: monthlyTotal,
       yearlyTotal: yearlyTotal,
-      annualTotal: annualFromMonthly + yearlyTotal,
+      annualTotal: annualFromMonthly + yearlyTotal + childFoodCost + educationCost,
       // カテゴリ別（月額）
       loan: loan,
       food: food,
       allowance: allowance,
-      other: other
+      other: other,
+      // 子供関連（年額）
+      childFoodCost: childFoodCost,
+      educationCost: educationCost
     };
   }
 
@@ -107,7 +276,6 @@
     var wifeBirthYear = input.wifeBirthYear || 1992;
     var currentAssets = input.currentAssets || 0;
 
-    var husbandCurrentAge = currentYear - husbandBirthYear;
     var results = [];
     var assets = currentAssets;
 
@@ -118,8 +286,11 @@
 
       if (husbandAge > TARGET_AGE) break;
 
-      var income = calculateYearlyIncome(input, husbandAge, wifeAge);
-      var expense = calculateYearlyExpense(input);
+      // 子供の年齢情報を取得
+      var children = getChildAges(input, year);
+
+      var income = calculateYearlyIncome(input, husbandAge, wifeAge, year, children);
+      var expense = calculateYearlyExpense(input, children);
       var balance = income.totalNet - expense.annualTotal;
 
       assets += balance;
@@ -132,6 +303,24 @@
       if (wifeAge === PENSION_START_AGE) {
         events.push('妻 年金開始');
       }
+
+      // 子供関連イベント
+      children.forEach(function(child) {
+        var label = '第' + child.order + '子';
+        if (child.age === 0) {
+          events.push(label + '誕生');
+        } else if (child.age === 6) {
+          events.push(label + '小学校');
+        } else if (child.age === 12) {
+          events.push(label + '中学校');
+        } else if (child.age === 15) {
+          events.push(label + '高校');
+        } else if (child.age === 18) {
+          events.push(label + '大学');
+        } else if (child.age === 22) {
+          events.push(label + '卒業');
+        }
+      });
 
       results.push({
         year: year,
@@ -257,6 +446,9 @@
       var husbandSalaryNet = Math.floor(income.husbandGross * (1 - TAX_RATE));
       var wifeSalaryNet = Math.floor(income.wifeGross * (1 - TAX_RATE));
 
+      // 児童手当+育休給付金
+      var childIncome = (income.childAllowance || 0) + (income.maternityBenefit || 0);
+
       tr.innerHTML =
         '<td>' + row.year + '</td>' +
         '<td>' + row.husbandAge + '</td>' +
@@ -265,10 +457,12 @@
         '<td class="detail-col income-detail">' + formatMoney(wifeSalaryNet) + '</td>' +
         '<td class="detail-col income-detail">' + formatMoney(income.husbandPension) + '</td>' +
         '<td class="detail-col income-detail">' + formatMoney(income.wifePension) + '</td>' +
+        '<td class="detail-col income-detail">' + formatMoney(childIncome) + '</td>' +
         '<td>' + formatMoney(row.expense) + '</td>' +
         '<td class="detail-col expense-detail">' + formatMoney(expense.loan * 12) + '</td>' +
-        '<td class="detail-col expense-detail">' + formatMoney(expense.food * 12) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney((expense.food * 12) + (expense.childFoodCost || 0)) + '</td>' +
         '<td class="detail-col expense-detail">' + formatMoney(expense.allowance * 12) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.educationCost || 0) + '</td>' +
         '<td class="detail-col expense-detail">' + formatMoney(expense.other * 12 + expense.yearlyTotal) + '</td>' +
         '<td class="' + (row.balance >= 0 ? 'positive' : 'negative') + '">' +
           (row.balance >= 0 ? '+' : '') + formatMoney(row.balance) + '</td>' +
