@@ -63,25 +63,14 @@
   // 支出計算（単年）
   // ============================================
   function calculateYearlyExpense(input) {
-    // 月額固定支出
-    var monthlyExpenses = {
-      houseLoan: input.houseLoan || 0,
-      carLoan: input.carLoan || 0,
-      utilities: input.utilities || 0,
-      phone: input.phone || 0,
-      wifi: input.wifi || 0,
-      husbandAllowance: input.husbandAllowance || 0,
-      wifeAllowance: input.wifeAllowance || 0,
-      food: input.food || 0,
-      medical: input.medical || 0,
-      insurance: input.insurance || 0,
-      contact: input.contact || 0
-    };
+    // 月額固定支出（カテゴリ別）
+    var loan = (input.houseLoan || 0) + (input.carLoan || 0);
+    var food = input.food || 0;
+    var allowance = (input.husbandAllowance || 0) + (input.wifeAllowance || 0);
+    var other = (input.utilities || 0) + (input.phone || 0) + (input.wifi || 0) +
+                (input.medical || 0) + (input.insurance || 0) + (input.contact || 0);
 
-    var monthlyTotal = 0;
-    for (var key in monthlyExpenses) {
-      monthlyTotal += monthlyExpenses[key];
-    }
+    var monthlyTotal = loan + food + allowance + other;
     var annualFromMonthly = monthlyTotal * 12;
 
     // 年額支出
@@ -100,7 +89,12 @@
     return {
       monthlyTotal: monthlyTotal,
       yearlyTotal: yearlyTotal,
-      annualTotal: annualFromMonthly + yearlyTotal
+      annualTotal: annualFromMonthly + yearlyTotal,
+      // カテゴリ別（月額）
+      loan: loan,
+      food: food,
+      allowance: allowance,
+      other: other
     };
   }
 
@@ -272,8 +266,10 @@
         '<td class="detail-col income-detail">' + formatMoney(income.husbandPension) + '</td>' +
         '<td class="detail-col income-detail">' + formatMoney(income.wifePension) + '</td>' +
         '<td>' + formatMoney(row.expense) + '</td>' +
-        '<td class="detail-col expense-detail">' + formatMoney(expense.monthlyTotal * 12) + '</td>' +
-        '<td class="detail-col expense-detail">' + formatMoney(expense.yearlyTotal) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.loan * 12) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.food * 12) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.allowance * 12) + '</td>' +
+        '<td class="detail-col expense-detail">' + formatMoney(expense.other * 12 + expense.yearlyTotal) + '</td>' +
         '<td class="' + (row.balance >= 0 ? 'positive' : 'negative') + '">' +
           (row.balance >= 0 ? '+' : '') + formatMoney(row.balance) + '</td>' +
         '<td class="' + (row.assets >= 0 ? '' : 'negative') + '">' +
