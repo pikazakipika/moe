@@ -45,6 +45,34 @@
   var MATERNITY_LEAVE_RATE_FIRST = 0.67;  // 180日まで67%
   var MATERNITY_LEAVE_RATE_AFTER = 0.50;  // 以降50%
 
+  // 子供費用の年齢別係数（基準額に掛ける）
+  var CHILD_COST_MULTIPLIER = {
+    // 学校外教育/活動費: 幼児は習い事少なめ、中高は塾や部活で増加
+    extracurricular: {
+      UNDER_6: 0.5,    // 0-5歳: 50%
+      UNDER_12: 1.0,   // 6-11歳: 100%
+      UNDER_15: 1.5,   // 12-14歳: 150%
+      UNDER_18: 2.0,   // 15-17歳: 200%
+      UNDER_23: 0      // 18歳以降: なし
+    },
+    // 衣服/生活用品: 成長に伴い増加
+    clothing: {
+      UNDER_6: 1.0,    // 0-5歳: 100%
+      UNDER_12: 1.0,   // 6-11歳: 100%
+      UNDER_15: 1.2,   // 12-14歳: 120%
+      UNDER_18: 1.5,   // 15-17歳: 150%
+      UNDER_23: 1.5    // 18-22歳: 150%
+    },
+    // お小遣い/携帯: 中学から発生、高校大学で増加
+    allowance: {
+      UNDER_6: 0,      // 0-5歳: なし
+      UNDER_12: 0.5,   // 6-11歳: 50%
+      UNDER_15: 1.0,   // 12-14歳: 100%
+      UNDER_18: 1.5,   // 15-17歳: 150%
+      UNDER_23: 2.0    // 18-22歳: 200%
+    }
+  };
+
   // ============================================
   // 子供の年齢リストを取得
   // ============================================
@@ -106,43 +134,79 @@
   }
 
   // ============================================
-  // 子供1人あたりの費用計算（食費+保育/学費）
+  // 年齢に応じた係数を取得
   // ============================================
-  function calculateChildCost(child, childIndex) {
+  function getAgeMultiplier(age, type) {
+    var mult = CHILD_COST_MULTIPLIER[type];
+    if (age < 6) return mult.UNDER_6;
+    if (age < 12) return mult.UNDER_12;
+    if (age < 15) return mult.UNDER_15;
+    if (age < 18) return mult.UNDER_18;
+    if (age < 23) return mult.UNDER_23;
+    return 0;
+  }
+
+  // ============================================
+  // 子供1人あたりの費用計算（食費+保育/学費+その他）
+  // ============================================
+  function calculateChildCost(child, childIndex, input) {
     if (child.age < 0) return 0;
 
     var cost = 0;
+    var breakdown = { food: 0, education: 0, extracurricular: 0, clothing: 0, allowance: 0 };
 
     // 食費増加
     if (child.age < 6) {
-      cost += CHILD_FOOD_COST.UNDER_6 * 12;
+      breakdown.food = CHILD_FOOD_COST.UNDER_6 * 12;
     } else if (child.age < 13) {
-      cost += CHILD_FOOD_COST.UNDER_13 * 12;
+      breakdown.food = CHILD_FOOD_COST.UNDER_13 * 12;
     } else if (child.age < 23) {
-      cost += CHILD_FOOD_COST.UNDER_23 * 12;
+      breakdown.food = CHILD_FOOD_COST.UNDER_23 * 12;
     }
+    cost += breakdown.food;
 
     // 保育料・学費
     if (child.age <= 2) {
       // 0〜2歳: 保育料（第1子のみ有料）
       if (childIndex === 0) {
-        cost += NURSERY_FEE_MONTHLY * 12;
+        breakdown.education = NURSERY_FEE_MONTHLY * 12;
       }
     } else if (child.age <= 5) {
       // 3〜5歳: 幼稚園/保育園（無償化で実費のみ）
-      cost += EDUCATION_COST.NURSERY;
+      breakdown.education = EDUCATION_COST.NURSERY;
     } else if (child.age <= 11) {
       // 6〜11歳: 小学校
-      cost += EDUCATION_COST.ELEMENTARY;
+      breakdown.education = EDUCATION_COST.ELEMENTARY;
     } else if (child.age <= 14) {
       // 12〜14歳: 中学校
-      cost += EDUCATION_COST.JUNIOR_HIGH;
+      breakdown.education = EDUCATION_COST.JUNIOR_HIGH;
     } else if (child.age <= 17) {
       // 15〜17歳: 高校
-      cost += EDUCATION_COST.HIGH_SCHOOL;
+      breakdown.education = EDUCATION_COST.HIGH_SCHOOL;
     } else if (child.age <= 21) {
       // 18〜21歳: 大学
-      cost += EDUCATION_COST.UNIVERSITY;
+      breakdown.education = EDUCATION_COST.UNIVERSITY;
+    }
+    cost += breakdown.education;
+
+    // 学校外教育/活動費（基準額 × 年齢係数）
+    var extBase = input.childExtracurricular || 0;
+    breakdown.extracurricular = Math.floor(extBase * getAgeMultiplier(child.age, 'extracurricular') * 12);
+    cost += breakdown.extracurricular;
+
+    // 衣服/生活用品（基準額 × 年齢係数）
+    var clothBase = input.childClothing || 0;
+    breakdown.clothing = Math.floor(clothBase * getAgeMultiplier(child.age, 'clothing') * 12);
+    cost += breakdown.clothing;
+
+    // お小遣い/携帯（基準額 × 年齢係数）
+    var allowBase = input.childAllowance || 0;
+    breakdown.allowance = Math.floor(allowBase * getAgeMultiplier(child.age, 'allowance') * 12);
+    cost += breakdown.allowance;
+
+    // デバッグ出力（最初の数年だけ）
+    if (child.age <= 3) {
+      console.log('子' + (childIndex + 1) + ' (年齢' + child.age + '): 食費=' + (breakdown.food/10000) + '万, 教育=' + (breakdown.education/10000) + '万, 課外=' + (breakdown.extracurricular/10000) + '万, 衣服=' + (breakdown.clothing/10000) + '万, 小遣=' + (breakdown.allowance/10000) + '万, 合計=' + (cost/10000) + '万');
     }
 
     return cost;
@@ -292,9 +356,9 @@
     }
 
     // 子供関連費用（子供ごと）
-    var child1Cost = children[0] ? calculateChildCost(children[0], 0) : 0;
-    var child2Cost = children[1] ? calculateChildCost(children[1], 1) : 0;
-    var child3Cost = children[2] ? calculateChildCost(children[2], 2) : 0;
+    var child1Cost = children[0] ? calculateChildCost(children[0], 0, input) : 0;
+    var child2Cost = children[1] ? calculateChildCost(children[1], 1, input) : 0;
+    var child3Cost = children[2] ? calculateChildCost(children[2], 2, input) : 0;
     var totalChildCost = child1Cost + child2Cost + child3Cost;
 
     return {
@@ -590,6 +654,30 @@
   }
 
   // ============================================
+  // ヘルプモーダル
+  // ============================================
+  function setupHelpModal() {
+    var modal = document.getElementById('helpModal');
+    var helpBtn = document.getElementById('helpBtn');
+    var closeBtn = document.getElementById('closeModal');
+
+    helpBtn.addEventListener('click', function() {
+      modal.classList.add('show');
+    });
+
+    closeBtn.addEventListener('click', function() {
+      modal.classList.remove('show');
+    });
+
+    // 背景クリックで閉じる
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        modal.classList.remove('show');
+      }
+    });
+  }
+
+  // ============================================
   // イベントリスナー・初期化
   // ============================================
   // ページ読み込み時に保存データを復元
@@ -597,6 +685,9 @@
 
   // カラム展開機能を設定
   setupColumnToggle();
+
+  // ヘルプモーダルを設定
+  setupHelpModal();
 
   document.getElementById('inputForm').addEventListener('submit', function(e) {
     e.preventDefault();

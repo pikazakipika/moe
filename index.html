@@ -59,7 +59,7 @@
       <!-- 子供情報セクション -->
       <section class="input-section">
         <h2>子供情報（最大3人）</h2>
-        <p class="section-note">生年を入力すると児童手当・保育料・学費・食費増加が自動計算されます</p>
+        <p class="section-note">生年を入力すると各種費用が自動計算されます</p>
         <div class="input-group">
           <label for="child1BirthYear">第1子の生年</label>
           <input type="number" id="child1BirthYear" name="child1BirthYear" placeholder="2025" min="2000" max="2050">
@@ -74,6 +74,22 @@
           <label for="child3BirthYear">第3子の生年</label>
           <input type="number" id="child3BirthYear" name="child3BirthYear" placeholder="" min="2000" max="2050">
           <span class="unit">年</span>
+        </div>
+        <p class="section-note" style="margin-top: 16px;">子供1人あたりの費用（基準額・年齢で自動調整）</p>
+        <div class="input-group">
+          <label for="childExtracurricular">学校外教育/活動費</label>
+          <input type="number" id="childExtracurricular" name="childExtracurricular" placeholder="10000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="childClothing">衣服/生活用品</label>
+          <input type="number" id="childClothing" name="childClothing" placeholder="5000" step="1000">
+          <span class="unit">円/月</span>
+        </div>
+        <div class="input-group">
+          <label for="childAllowance">お小遣い/携帯</label>
+          <input type="number" id="childAllowance" name="childAllowance" placeholder="5000" step="1000">
+          <span class="unit">円/月</span>
         </div>
       </section>
 
@@ -162,7 +178,10 @@
         </div>
       </section>
 
-      <button type="submit" class="calculate-btn">計算する</button>
+      <div class="button-row">
+        <button type="submit" class="calculate-btn">計算する</button>
+        <button type="button" class="help-btn" id="helpBtn">?</button>
+      </div>
     </form>
 
     <!-- 結果表示エリア -->
@@ -218,6 +237,69 @@
         </table>
       </div>
     </section>
+  </div>
+
+  <!-- ヘルプモーダル -->
+  <div id="helpModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>計算ロジックの説明</h2>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <section class="help-section">
+          <h3>収入の計算</h3>
+          <table class="help-table">
+            <tr><th>項目</th><th>計算方法</th></tr>
+            <tr><td>給与（税引後）</td><td>入力額 × 80%</td></tr>
+            <tr><td>年金（65歳〜）</td><td>夫: 17万/月、妻: 13万/月</td></tr>
+            <tr><td>児童手当</td><td>0〜2歳: 1.5万/月<br>3歳〜高校生: 1万/月<br>第3子以降: 3万/月</td></tr>
+            <tr><td>育休給付金</td><td>出産年に給与の約58.5%</td></tr>
+          </table>
+        </section>
+
+        <section class="help-section">
+          <h3>支出の計算</h3>
+          <table class="help-table">
+            <tr><th>項目</th><th>計算方法</th></tr>
+            <tr><td>ローン</td><td>家+車のローン × 12ヶ月</td></tr>
+            <tr><td>食費</td><td>家族の食費 × 12ヶ月</td></tr>
+            <tr><td>小遣い</td><td>夫+妻の小遣い × 12ヶ月</td></tr>
+            <tr><td>その他</td><td>公共料金・携帯・WiFi・医療費・保険・コンタクト × 12 + 年額支出</td></tr>
+          </table>
+        </section>
+
+        <section class="help-section">
+          <h3>子供関連費用（子1/子2/子3）</h3>
+          <h4>食費増加（月額）</h4>
+          <table class="help-table">
+            <tr><th>年齢</th><th>金額</th></tr>
+            <tr><td>0〜5歳</td><td>2万円/月</td></tr>
+            <tr><td>6〜12歳</td><td>3万円/月</td></tr>
+            <tr><td>13〜22歳</td><td>4万円/月</td></tr>
+          </table>
+          <h4>教育費（年額）</h4>
+          <table class="help-table">
+            <tr><th>年齢</th><th>区分</th><th>金額</th></tr>
+            <tr><td>0〜2歳</td><td>保育料</td><td>48万（第1子のみ）</td></tr>
+            <tr><td>3〜5歳</td><td>幼保</td><td>5万</td></tr>
+            <tr><td>6〜11歳</td><td>小学校</td><td>10万</td></tr>
+            <tr><td>12〜14歳</td><td>中学校</td><td>15万</td></tr>
+            <tr><td>15〜17歳</td><td>高校</td><td>25万</td></tr>
+            <tr><td>18〜21歳</td><td>大学</td><td>50万</td></tr>
+          </table>
+          <h4>その他費用（基準額×係数）</h4>
+          <table class="help-table">
+            <tr><th>年齢</th><th>学校外教育</th><th>衣服等</th><th>小遣い/携帯</th></tr>
+            <tr><td>0〜5歳</td><td>×0.5</td><td>×1.0</td><td>×0</td></tr>
+            <tr><td>6〜11歳</td><td>×1.0</td><td>×1.0</td><td>×0.5</td></tr>
+            <tr><td>12〜14歳</td><td>×1.5</td><td>×1.2</td><td>×1.0</td></tr>
+            <tr><td>15〜17歳</td><td>×2.0</td><td>×1.5</td><td>×1.5</td></tr>
+            <tr><td>18〜22歳</td><td>×0</td><td>×1.5</td><td>×2.0</td></tr>
+          </table>
+        </section>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
